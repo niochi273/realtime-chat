@@ -1,0 +1,10 @@
+{
+  "name": "@repo/shared",
+  "version": "1.0.0",
+  "main": "schema.ts",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "drizzle-orm": "^0.45.2"
+  }
+}

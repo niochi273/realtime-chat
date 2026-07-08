@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { db } from "./src/db.js";
-import { messages } from "./src/schema.js";
+import { messages } from "@repo/shared";
 import { asc, eq } from "drizzle-orm";
 
 dotenv.config();
