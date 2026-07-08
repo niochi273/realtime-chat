@@ -19,7 +19,7 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  let currentRoom;
+  let currentRoom: string;
 
   socket.on("join_room", async (room, callback) => {
     if (currentRoom) {

@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "tsx server.ts"
   },
   "keywords": [],
   "author": "",
@@ -20,8 +21,10 @@
     "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "@types/node": "^26.1.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.1.1",
     "@types/pg": "^8.20.0",
-    "drizzle-kit": "^1.0.0-rc.4"
+    "drizzle-kit": "^1.0.0-rc.4",
+    "tsx": "^4.23.0"
   }
 }
