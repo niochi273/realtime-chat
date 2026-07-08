@@ -1,19 +1,21 @@
+import dotenv from "dotenv";
 import express from "express";
 import { createServer } from "node:http";
-import { fileURLToPath } from "node:url";
-import { dirname, join } from "node:path";
 import { Server } from "socket.io";
 import { db } from "./src/db.js";
 import { messages } from "./src/schema.js";
 import { asc, eq } from "drizzle-orm";
 
+dotenv.config();
+
+const port = process.env.PORT;
 const app = express();
 const server = createServer(app);
-const io = new Server(server);
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
-app.get("/", (req, res) => {
-  res.sendFile(join(__dirname, "index.html"));
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
 });
 
 io.on("connection", (socket) => {
@@ -45,7 +47,7 @@ io.on("connection", (socket) => {
         })
         .returning();
 
-      io.to(currentRoom).emit("chat_message", message[0]);
+      socket.to(currentRoom).emit("chat_message", message[0]);
       callback({ ok: true });
     } catch (err) {
       console.error(err);
@@ -54,6 +56,6 @@ io.on("connection", (socket) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log("server running at http://localhost:3000");
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
 });
