@@ -12,71 +12,48 @@ import {
   FieldLabel,
 } from "./ui/field";
 import { InputGroup, InputGroupInput, InputGroupAddon } from "./ui/input-group";
-import { Eye, EyeOff, Loader2, Mail, UserRound } from "lucide-react";
-import { signUp } from "@/lib/auth-client";
+import { Eye, EyeOff, Loader2, Mail } from "lucide-react";
+import { signIn } from "@/lib/auth-client";
 import { Button } from "./ui/button";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-const formSchema = z
-  .object({
-    username: z
-      .string()
-      .min(5, "Username must be at least 5 characters.")
-      .max(32, "Username must be at most 32 characters."),
-    email: z.email({ message: "Invalid email address" }),
-    password: z
-      .string()
-      .min(8, { message: "Password must be at least 8 characters" })
-      .regex(/[A-Z]/, {
-        message: "Password must contain at least one uppercase letter",
-      })
-      .regex(/[a-z]/, {
-        message: "Password must contain at least one lowercase letter",
-      })
-      .regex(/[0-9]/, { message: "Password must contain at least one number" })
-      .regex(/[^a-zA-Z0-9]/, {
-        message: "Password must contain at least one special character",
-      }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
+const formSchema = z.object({
+  email: z.email({ message: "Invalid email address" }),
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters" }),
+});
 
-export default function RegisterForm() {
+export default function LoginForm() {
   const router = useRouter();
   const [passwordVisible, setPasswordVisible] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
       email: "",
       password: "",
-      confirmPassword: "",
     },
   });
 
   const { isSubmitting } = form.formState;
 
   async function onSubmit(inputData: z.infer<typeof formSchema>) {
-    const { email, username, password } = inputData;
+    const { email, password } = inputData;
 
-    await signUp.email(
+    await signIn.email(
       {
         email,
         password,
-        name: username,
       },
       {
         onSuccess: () => {
           router.push("/");
         },
         onError: (ctx) => {
-          alert(ctx.error.message);
+          form.setError("root", { message: ctx.error.message });
         },
       },
     );
@@ -85,32 +62,8 @@ export default function RegisterForm() {
   return (
     <>
       <CardContent>
-        <form id="register-form" onSubmit={form.handleSubmit(onSubmit)}>
+        <form id="login-form" onSubmit={form.handleSubmit(onSubmit)}>
           <FieldGroup>
-            <Controller
-              name="username"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="username">Username</FieldLabel>
-                  <InputGroup>
-                    <InputGroupAddon>
-                      <UserRound />
-                    </InputGroupAddon>
-                    <InputGroupInput
-                      {...field}
-                      id="username"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="John Doe"
-                      autoComplete="off"
-                    />
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </InputGroup>
-                </Field>
-              )}
-            />
             <Controller
               name="email"
               control={form.control}
@@ -170,45 +123,26 @@ export default function RegisterForm() {
                 </Field>
               )}
             />
-            <Controller
-              name="confirmPassword"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="confirm-password">
-                    Confirm password
-                  </FieldLabel>
-                  <InputGroup>
-                    <InputGroupInput
-                      {...field}
-                      id="confirm-password"
-                      aria-invalid={fieldState.invalid}
-                      placeholder="Repeat password"
-                      autoComplete="off"
-                      type={passwordVisible ? "text" : "password"}
-                    />
-                  </InputGroup>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
           </FieldGroup>
         </form>
       </CardContent>
       <CardFooter>
         <Field>
-          <Button disabled={isSubmitting} type="submit" form="register-form">
+          {form.formState.errors.root && (
+            <p className="text-destructive text-sm text-center">
+              {form.formState.errors.root.message}
+            </p>
+          )}
+          <Button disabled={isSubmitting} type="submit" form="login-form">
             {isSubmitting ? <Loader2 className="animate-spin" /> : "Submit"}
           </Button>
           <FieldDescription className="text-center">
-            Already have an account?
+            Do not have an account?
             <Link
-              href="/login"
+              href="/register"
               className="hover:text-foreground ml-1 underline underline-offset-4"
             >
-              Sign In
+              Sign Up
             </Link>
           </FieldDescription>
         </Field>
