@@ -19,7 +19,8 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@repo/shared": ["../shared/schema.ts"]
     }
   },
   "include": [
@@ -28,8 +29,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
-    "**/*.mts",
-    "../db/auth-schema.ts"
+    "**/*.mts"
   ],
   "exclude": ["node_modules"]
 }
