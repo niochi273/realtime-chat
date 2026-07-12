@@ -3,4 +3,6 @@ export type Message = {
   content: string;
   createdAt: string;
   room: string;
+  senderName: string;
+  senderId: string;
 };

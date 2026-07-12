@@ -8,7 +8,12 @@ import { Message } from "@/lib/types";
 import { Send } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
-export default function Chat() {
+interface ChatInterface {
+  username: string;
+  userId: string;
+}
+
+export default function Chat({ username, userId }: ChatInterface) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState<string>("");
   const [currentRoom, setCurrentRoom] = useState<string>("");
@@ -58,6 +63,8 @@ export default function Chat() {
       room: currentRoom,
       content: text,
       createdAt: new Date().toISOString(),
+      senderName: username,
+      senderId: userId,
     };
 
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -65,6 +72,10 @@ export default function Chat() {
 
     socket.emit("chat_message", text, ({ ok }: { ok: boolean }) => {
       if (!ok) {
+        window.scrollTo({
+          top: 0,
+          behavior: "smooth",
+        });
         setMessages((prev) =>
           prev.filter((m) => m.id !== optimisticMessage.id),
         );
@@ -100,15 +111,29 @@ export default function Chat() {
         </FieldGroup>
       </header>
       <main>
-        <ul>
-          {messages.map((msg) => (
-            <li className="p-2" key={msg.id}>
-              {msg.content}
-            </li>
-          ))}
+        <ul className="p-4">
+          {messages.map((msg) => {
+            const isMine = msg.senderId === userId;
+
+            return (
+              <li
+                className={`flex flex-row ${isMine ? "justify-end " : "justify-start"}`}
+                key={msg.id}
+              >
+                <div
+                  className={`my-2 shadow rounded-xl p-2 flex flex-col ${isMine ? "items-end bg-primary text-primary-foreground" : "items-start bg-muted"}`}
+                >
+                  <span className="text-xs">
+                    {new Date(msg.createdAt).toLocaleTimeString()}
+                  </span>
+                  <span>{msg.content}</span>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       </main>
-      <footer className="mt-auto p-4">
+      <footer className="mt-auto sticky bottom-0 right-0 bg-muted p-4">
         <form onSubmit={handleSubmit}>
           <FieldGroup className="flex flex-row gap-2 ">
             <Field>

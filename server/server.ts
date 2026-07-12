@@ -3,7 +3,7 @@ import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { db } from "./src/db.js";
-import { messages, session } from "@repo/shared";
+import { messages, session, user } from "@repo/shared";
 import { asc, eq } from "drizzle-orm";
 import { parse } from "cookie";
 
@@ -31,8 +31,13 @@ io.use(async (socket, next) => {
 
   try {
     const dbSession = await db
-      .select()
+      .select({
+        userId: session.userId,
+        userName: user.name,
+        expiresAt: session.expiresAt,
+      })
       .from(session)
+      .leftJoin(user, eq(session.userId, user.id))
       .where(eq(session.token, parsedCookie));
 
     if (dbSession.length === 0) return next(new Error("Unauthorized"));
@@ -41,6 +46,7 @@ io.use(async (socket, next) => {
       return next(new Error("Unauthorized"));
     }
 
+    socket.data.userName = dbSession[0].userName;
     socket.data.userId = dbSession[0].userId;
     next();
   } catch (e: any) {
@@ -59,8 +65,15 @@ io.on("connection", (socket) => {
     socket.join(room);
     currentRoom = room;
     const roomMessages = await db
-      .select()
+      .select({
+        id: messages.id,
+        content: messages.content,
+        createdAt: messages.createdAt,
+        senderId: messages.senderId,
+        senderName: user.name,
+      })
       .from(messages)
+      .leftJoin(user, eq(messages.senderId, user.id))
       .where(eq(messages.room, room))
       .orderBy(asc(messages.createdAt));
 
@@ -78,7 +91,10 @@ io.on("connection", (socket) => {
         })
         .returning();
 
-      socket.to(currentRoom).emit("chat_message", message[0]);
+      socket.to(currentRoom).emit("chat_message", {
+        ...message[0],
+        senderName: socket.data.userName,
+      });
       callback({ ok: true });
     } catch (err) {
       console.error(err);

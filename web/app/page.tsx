@@ -10,5 +10,5 @@ export default async function Home() {
     redirect("/login");
   }
 
-  return <Chat />;
+  return <Chat username={session.user.name} userId={session.user.id} />;
 }
