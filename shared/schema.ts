@@ -13,6 +13,9 @@ export const messages = pgTable("messages", {
   room: text("room").notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  senderId: text("sender_id").references(() => user.id, {
+    onDelete: "set null",
+  }),
 });
 
 export const user = pgTable("user", {

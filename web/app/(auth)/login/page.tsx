@@ -1,14 +1,9 @@
 import LoginForm from "@/components/login-form";
-import {
-  Card,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   return (
-    <Card className="mx-auto my-10 w-full max-w-sm">
+    <>
       <CardHeader>
         <CardTitle>Login</CardTitle>
         <CardDescription>
@@ -16,6 +11,6 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <LoginForm />
-    </Card>
+    </>
   );
 }
