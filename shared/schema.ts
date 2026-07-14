@@ -6,11 +6,14 @@ import {
   boolean,
   index,
   uuid,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 
 export const messages = pgTable("messages", {
   id: uuid("id").defaultRandom().primaryKey(),
-  room: text("room").notNull(),
+  chatId: uuid("chat_id")
+    .references(() => chats.id, { onDelete: "cascade" })
+    .notNull(),
   content: text("content").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   senderId: text("sender_id").references(() => user.id, {
@@ -30,6 +33,32 @@ export const user = pgTable("user", {
     .$onUpdate(() => /* @__PURE__ */ new Date())
     .notNull(),
 });
+
+export const chats = pgTable("chats", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name"),
+  pairKey: text("pair_key").unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastMessageText: text("last_message_text"),
+  lastMessageCreatedAt: timestamp("last_message_created_at"),
+});
+
+export const chatParticipants = pgTable(
+  "chat_participants",
+  {
+    chatId: uuid("chat_id")
+      .references(() => chats.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+    userId: text("user_id")
+      .references(() => user.id, {
+        onDelete: "cascade",
+      })
+      .notNull(),
+  },
+  (table) => [primaryKey({ columns: [table.chatId, table.userId] })],
+);
 
 export const session = pgTable(
   "session",

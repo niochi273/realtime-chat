@@ -3,8 +3,8 @@ import express from "express";
 import { createServer } from "node:http";
 import { Server } from "socket.io";
 import { db } from "./src/db.js";
-import { messages, session, user } from "@repo/shared";
-import { asc, eq } from "drizzle-orm";
+import { chatParticipants, chats, messages, session, user } from "@repo/shared";
+import { asc, eq, and, ne } from "drizzle-orm";
 import { parse } from "cookie";
 
 dotenv.config();
@@ -55,16 +55,62 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  let currentRoom: string;
+  let currentChatId: string;
 
-  socket.on("join_room", async (room, callback) => {
-    if (currentRoom) {
-      socket.leave(currentRoom);
+  // Get users
+
+  socket.on("get_users", async (callback) => {
+    const users = await db
+      .select({ id: user.id, name: user.name })
+      .from(user)
+      .where(ne(user.id, socket.data.userId));
+
+    callback({ users });
+  });
+
+  // Create or get chat
+
+  socket.on("create_or_get_chat", async (otherUserId, callback) => {
+    if (otherUserId === socket.data.userId)
+      return callback({ errorMsg: "Can't make chat with yourself" });
+
+    const otherUser = await db
+      .select({ id: user.id })
+      .from(user)
+      .where(eq(user.id, otherUserId));
+
+    if (otherUser.length === 0)
+      return callback({ errorMsg: "User doesn't exist" });
+
+    const pairKey = [socket.data.userId, otherUserId].sort().join(":");
+
+    const existingChat = await db
+      .select()
+      .from(chats)
+      .where(eq(chats.pairKey, pairKey));
+
+    const chatId =
+      existingChat.length > 0
+        ? existingChat[0].id
+        : await db.transaction(async (tx) => {
+            const [chat] = await tx
+              .insert(chats)
+              .values({ pairKey })
+              .returning();
+            await tx.insert(chatParticipants).values([
+              { chatId: chat.id, userId: socket.data.userId },
+              { chatId: chat.id, userId: otherUserId },
+            ]);
+            return chat.id;
+          });
+
+    if (currentChatId) {
+      socket.leave(currentChatId);
     }
 
-    socket.join(room);
-    currentRoom = room;
-    const roomMessages = await db
+    socket.join(chatId);
+    currentChatId = chatId;
+    const chatMessages = await db
       .select({
         id: messages.id,
         content: messages.content,
@@ -74,31 +120,46 @@ io.on("connection", (socket) => {
       })
       .from(messages)
       .leftJoin(user, eq(messages.senderId, user.id))
-      .where(eq(messages.room, room))
+      .where(eq(messages.chatId, chatId))
       .orderBy(asc(messages.createdAt));
 
-    callback({ room, history: roomMessages });
+    callback({ history: chatMessages, chatId });
   });
+
+  // Send message
 
   socket.on("chat_message", async (msg, callback) => {
     try {
+      const participants = await db
+        .select()
+        .from(chatParticipants)
+        .where(
+          and(
+            eq(chatParticipants.chatId, currentChatId),
+            eq(chatParticipants.userId, socket.data.userId),
+          ),
+        );
+
+      if (participants.length === 0) {
+        return callback({ errorMsg: "No participants" });
+      }
+
       const message = await db
         .insert(messages)
         .values({
-          room: currentRoom,
+          chatId: currentChatId,
           content: msg,
           senderId: socket.data.userId,
         })
         .returning();
 
-      socket.to(currentRoom).emit("chat_message", {
+      socket.to(currentChatId).emit("chat_message", {
         ...message[0],
         senderName: socket.data.userName,
       });
-      callback({ ok: true });
     } catch (err) {
       console.error(err);
-      callback({ ok: false });
+      callback({ errorMsg: err });
     }
   });
 });
