@@ -114,14 +114,20 @@ export default function Chat({ username, userId }: ChatInterface) {
 
   return (
     <div className="flex h-screen">
-      <aside className="py-2 px-1 overflow-y-auto border-r">
+      <aside className="min-w-25 py-1 overflow-y-auto border-r">
         <ul>
           {friends?.map((user) => (
             <li
+              className="border-b p-0.5"
               onClick={() => createOrGetChat(user.id, user.name)}
               key={user.id}
             >
-              <Button variant="outline">{user.name}</Button>
+              <Button
+                className="justify-start w-full border-0"
+                variant="outline"
+              >
+                {user.name}
+              </Button>
             </li>
           ))}
         </ul>
@@ -129,10 +135,9 @@ export default function Chat({ username, userId }: ChatInterface) {
 
       <section className="flex min-w-0 flex-1 flex-col">
         {currentChat && (
-          <header className="border-b py-1 px-2">
+          <header className="bg-secondary border-b py-1 px-2">
             <div>
               <span>{friendName}</span>
-              <span>{}</span>
             </div>
           </header>
         )}
@@ -145,7 +150,7 @@ export default function Chat({ username, userId }: ChatInterface) {
                 key={msg.id}
               >
                 <div
-                  className={`my-2 flex flex-col rounded-xl p-2 shadow ${isMine ? "items-end bg-primary text-primary-foreground" : "items-start bg-muted"}`}
+                  className={`my-2 flex flex-col rounded-xl p-2 shadow ${isMine ? "items-end bg-gray-200  text-secondary-foreground" : "items-start bg-accent"}`}
                 >
                   <span className="text-xs">
                     {new Date(msg.createdAt).toLocaleTimeString(undefined, {
@@ -161,7 +166,7 @@ export default function Chat({ username, userId }: ChatInterface) {
         </ul>
 
         {currentChat && (
-          <footer className="bg-muted p-4">
+          <footer className="bg-accent p-4">
             <form onSubmit={handleSubmit}>
               <FieldGroup className="flex flex-row gap-2">
                 <Field className="flex-1">
